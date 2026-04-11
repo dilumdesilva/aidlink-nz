@@ -9,6 +9,8 @@
   import AddPinModal from './components/AddPinModal.svelte'
   import Toast from './components/Toast.svelte'
   import IncidentPill from './components/IncidentPill.svelte'
+  import OutOfNzModal from './components/OutOfNzModal.svelte'
+  import { checkUserInNZ, getUserCoords } from './lib/geofence'
   import { listActivePins, type Pin } from './lib/pins'
   import { freshPins } from './lib/staleness'
   import type { PinType } from './lib/categories'
@@ -17,6 +19,7 @@
   let visiblePins: Pin[] = []
   let filteredTypes: Set<PinType> = new Set<PinType>(['help', 'need'])
   let showAddModal = false
+  let showOutOfNzModal = false
   let initialPosition: { lat: number; lng: number } | null = null
   let loading = true
   let errorMsg = ''
@@ -113,19 +116,19 @@
     }
   }
 
-  async function tryGeolocate(): Promise<{ lat: number; lng: number } | null> {
-    if (!navigator.geolocation) return null
-    return new Promise(resolve => {
-      navigator.geolocation.getCurrentPosition(
-        pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve(null),
-        { enableHighAccuracy: true, timeout: 10000 },
-      )
-    })
-  }
-
   async function openAddFromButton() {
-    initialPosition = await tryGeolocate()
+    const status = await checkUserInNZ()
+    // If geolocation confirms the user is outside NZ, block the add flow
+    // and show the same OutOfNzModal we use for confirm/resolve/flag.
+    // 'unknown' (permission denied / unavailable) falls through so the
+    // user can long-press on the map or use the in-modal "Use my
+    // location" retry.
+    if (status === 'out') {
+      initialPosition = null
+      showOutOfNzModal = true
+      return
+    }
+    initialPosition = status === 'in' ? await getUserCoords() : null
     showAddModal = true
   }
 
@@ -176,6 +179,7 @@
       pins={visiblePins}
       on:requestAdd={e => openAddAt(e.detail)}
       on:pinUpdated={e => handlePinUpdated(e.detail.action)}
+      on:blocked={() => (showOutOfNzModal = true)}
     />
 
     <StatsCard {helpCount} {needCount} />
@@ -207,6 +211,10 @@
     on:close={() => (showAddModal = false)}
     on:created={handleCreated}
   />
+{/if}
+
+{#if showOutOfNzModal}
+  <OutOfNzModal on:close={() => (showOutOfNzModal = false)} />
 {/if}
 
 <Toast visible={toastVisible} message={toastMessage} />

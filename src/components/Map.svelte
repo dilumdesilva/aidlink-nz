@@ -7,12 +7,14 @@
   import { getCategory } from '../lib/categories'
   import { timeAgo } from '../lib/staleness'
   import { NZ_CENTER, isInNZ } from '../lib/geo'
+  import { checkUserInNZ } from '../lib/geofence'
 
   export let pins: Pin[] = []
 
   const dispatch = createEventDispatcher<{
     requestAdd: { lat: number; lng: number }
     pinUpdated: { action: 'confirm' | 'resolve' | 'flag' }
+    blocked: void
   }>()
 
   let container: HTMLDivElement
@@ -146,8 +148,22 @@
           return
         }
 
+        // Geofence: confirm / resolve / flag are all only available to
+        // users currently in NZ. 'unknown' (denied / unavailable) falls
+        // through so we don't block users who legitimately disabled
+        // geolocation.
         const original = btn.textContent
         btn.disabled = true
+        btn.textContent = 'Checking…'
+        const geofenceStatus = await checkUserInNZ()
+        if (geofenceStatus === 'out') {
+          btn.disabled = false
+          btn.textContent = original ?? ''
+          popup.remove()
+          dispatch('blocked')
+          return
+        }
+
         btn.textContent = 'Saving…'
         try {
           if (action === 'confirm') {
