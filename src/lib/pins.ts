@@ -77,7 +77,6 @@ export async function createPin(input: PinInput): Promise<string> {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     expiresAt: Timestamp.fromMillis(now + TWELVE_HOURS_MS),
-    userAgent: navigator.userAgent.slice(0, 200),
   })
   return ref.id
 }
