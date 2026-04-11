@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /pins/{pinId} {
+
+      // Public read — no PII is stored, so this is safe by design.
+      allow read: if true;
+
+      // Anyone can create a well-formed pin within NZ bounds.
+      allow create: if
+        request.resource.data.type in ['help', 'need']
+        && request.resource.data.category is string
+        && request.resource.data.category.size() > 0
+        && request.resource.data.category.size() <= 32
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 80
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 280
+        && request.resource.data.lat is number
+        && request.resource.data.lat >= -47.5
+        && request.resource.data.lat <= -34.0
+        && request.resource.data.lng is number
+        && request.resource.data.lng >= 166.0
+        && request.resource.data.lng <= 179.0
+        && request.resource.data.status == 'active'
+        && request.resource.data.confirmCount == 0;
+
+      // Updates restricted: only status / confirmCount / updatedAt may
+      // change. Original content is locked → vandals cannot rewrite pins.
+      allow update: if
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'confirmCount', 'updatedAt'])
+        && request.resource.data.confirmCount is number
+        && request.resource.data.confirmCount <= resource.data.confirmCount + 1
+        && request.resource.data.status in ['active', 'resolved', 'stale'];
+
+      // No client-side deletes.
+      allow delete: if false;
+    }
+  }
+}
