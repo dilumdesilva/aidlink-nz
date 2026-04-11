@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start --only firestore --project demo-aidlink"
   },
   "dependencies": {
     "firebase": "^11.1.0",
