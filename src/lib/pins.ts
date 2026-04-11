@@ -36,6 +36,7 @@ export interface Pin {
   geohash: string
   status: PinStatus
   confirmCount: number
+  flagCount: number
   createdAt: Date | null
   updatedAt: Date | null
   expiresAt: Date | null
@@ -72,6 +73,7 @@ export async function createPin(input: PinInput): Promise<string> {
     geohash: geohashOf(input.lat, input.lng),
     status: 'active' as PinStatus,
     confirmCount: 0,
+    flagCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     expiresAt: Timestamp.fromMillis(now + TWELVE_HOURS_MS),
@@ -97,6 +99,7 @@ export async function listActivePins(): Promise<Pin[]> {
       geohash: data.geohash ?? '',
       status: data.status ?? 'active',
       confirmCount: typeof data.confirmCount === 'number' ? data.confirmCount : 0,
+      flagCount: typeof data.flagCount === 'number' ? data.flagCount : 0,
       createdAt: tsToDate(data.createdAt),
       updatedAt: tsToDate(data.updatedAt),
       expiresAt: tsToDate(data.expiresAt),
@@ -115,6 +118,13 @@ export async function confirmPin(pinId: string): Promise<void> {
 export async function resolvePin(pinId: string): Promise<void> {
   await updateDoc(doc(PINS, pinId), {
     status: 'resolved',
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function flagPin(pinId: string): Promise<void> {
+  await updateDoc(doc(PINS, pinId), {
+    flagCount: increment(1),
     updatedAt: serverTimestamp(),
   })
 }

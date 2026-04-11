@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  /* Fluid root font-size: scales smoothly between mobile and desktop.
+     Every rem-based unit (i.e. all Tailwind text-* classes) scales with it,
+     so the whole UI grows proportionally as the viewport widens. */
+  font-size: clamp(14px, calc(13px + 0.35vw), 18px);
+}
+
 html,
 body,
 #app {

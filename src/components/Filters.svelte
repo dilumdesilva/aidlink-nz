@@ -20,7 +20,7 @@
 <div class="flex gap-2 px-3 py-2 bg-white border-b border-gray-200">
   <button
     type="button"
-    class="flex-1 py-2 rounded-md border text-sm font-semibold transition"
+    class="flex-1 rounded-lg border-2 px-5 py-2.5 text-sm sm:text-base font-bold transition min-h-[44px] shadow-sm"
     class:bg-green-600={filteredTypes.has('help')}
     class:text-white={filteredTypes.has('help')}
     class:border-green-600={filteredTypes.has('help')}
@@ -33,7 +33,7 @@
   </button>
   <button
     type="button"
-    class="flex-1 py-2 rounded-md border text-sm font-semibold transition"
+    class="flex-1 rounded-lg border-2 px-5 py-2.5 text-sm sm:text-base font-bold transition min-h-[44px] shadow-sm"
     class:bg-orange-600={filteredTypes.has('need')}
     class:text-white={filteredTypes.has('need')}
     class:border-orange-600={filteredTypes.has('need')}

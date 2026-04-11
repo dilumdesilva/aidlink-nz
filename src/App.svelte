@@ -1,9 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import Disclaimer from './components/Disclaimer.svelte'
+  import TopBar from './components/TopBar.svelte'
+  import Footer from './components/Footer.svelte'
   import Filters from './components/Filters.svelte'
   import Map from './components/Map.svelte'
+  import StatsCard from './components/StatsCard.svelte'
   import AddPinModal from './components/AddPinModal.svelte'
+  import Toast from './components/Toast.svelte'
+  import IncidentPill from './components/IncidentPill.svelte'
   import { listActivePins, type Pin } from './lib/pins'
   import { freshPins } from './lib/staleness'
   import type { PinType } from './lib/categories'
@@ -17,9 +22,30 @@
   let errorMsg = ''
   let refreshTimer: number | undefined
 
+  // Toast for community-action thank-yous
+  let toastVisible = false
+  let toastMessage = ''
+  let toastTimer: number | undefined
+
+  function showToast(message: string, ms = 3000) {
+    toastMessage = message
+    toastVisible = true
+    if (toastTimer) clearTimeout(toastTimer)
+    toastTimer = window.setTimeout(() => {
+      toastVisible = false
+    }, ms)
+  }
+
   const REFRESH_MS = 60_000
   const CACHE_KEY = 'aidlink:pins-cache:v1'
   const CACHE_TTL_MS = 60_000
+
+  // Live counts for the TopBar — derived from fresh (non-stale) pins so
+  // the numbers match what you actually see on the map. Filter toggles
+  // do NOT affect these counts; they are totals for the active incident.
+  $: freshAll = freshPins(allPins)
+  $: helpCount = freshAll.filter(p => p.type === 'help').length
+  $: needCount = freshAll.filter(p => p.type === 'need').length
 
   function applyFilters() {
     visiblePins = freshPins(allPins).filter(p => filteredTypes.has(p.type))
@@ -74,6 +100,7 @@
         geohash: (p.geohash as string) ?? '',
         status: (p.status as Pin['status']) ?? 'active',
         confirmCount: (p.confirmCount as number) ?? 0,
+        flagCount: (p.flagCount as number) ?? 0,
         createdAt: p.createdAt ? new Date(p.createdAt as string) : null,
         updatedAt: p.updatedAt ? new Date(p.updatedAt as string) : null,
         expiresAt: p.expiresAt ? new Date(p.expiresAt as string) : null,
@@ -117,6 +144,16 @@
     refresh()
   }
 
+  function handlePinUpdated(action: 'confirm' | 'resolve' | 'flag') {
+    const messages: Record<typeof action, string> = {
+      confirm: 'Thanks for helping the community ❤️',
+      resolve: 'Thanks for helping the community ❤️',
+      flag: 'Reported. Thanks for keeping the map accurate',
+    }
+    showToast(messages[action])
+    refresh()
+  }
+
   onMount(() => {
     loadCache()
     refresh()
@@ -125,19 +162,24 @@
 
   onDestroy(() => {
     if (refreshTimer) clearInterval(refreshTimer)
+    if (toastTimer) clearTimeout(toastTimer)
   })
 </script>
 
 <div class="flex flex-col h-full">
   <Disclaimer />
+  <TopBar on:addPin={openAddFromButton} />
   <Filters {filteredTypes} on:change={e => handleFilterChange(e.detail)} />
 
   <div class="flex-1 relative">
     <Map
       pins={visiblePins}
       on:requestAdd={e => openAddAt(e.detail)}
-      on:pinUpdated={refresh}
+      on:pinUpdated={e => handlePinUpdated(e.detail.action)}
     />
+
+    <StatsCard {helpCount} {needCount} />
+    <IncidentPill />
 
     {#if loading}
       <div
@@ -154,15 +196,9 @@
         {errorMsg}
       </div>
     {/if}
-
-    <button
-      type="button"
-      class="absolute bottom-6 right-6 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-full shadow-lg px-5 py-3 z-30"
-      on:click={openAddFromButton}
-    >
-      + Add a pin
-    </button>
   </div>
+
+  <Footer />
 </div>
 
 {#if showAddModal}
@@ -172,3 +208,5 @@
     on:created={handleCreated}
   />
 {/if}
+
+<Toast visible={toastVisible} message={toastMessage} />

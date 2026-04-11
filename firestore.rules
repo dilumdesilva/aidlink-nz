@@ -25,15 +25,23 @@ service cloud.firestore {
         && request.resource.data.lng >= 166.0
         && request.resource.data.lng <= 179.0
         && request.resource.data.status == 'active'
-        && request.resource.data.confirmCount == 0;
+        && request.resource.data.confirmCount == 0
+        && request.resource.data.flagCount == 0;
 
-      // Updates restricted: only status / confirmCount / updatedAt may
-      // change. Original content is locked → vandals cannot rewrite pins.
+      // Updates restricted: only status / confirmCount / flagCount /
+      // updatedAt may change. Original content is locked → vandals cannot
+      // rewrite pins. Counters can only ever increment by 1 per update.
+      // Uses get(field, 0) so the rule is backward-compatible with pins
+      // created before flagCount existed in the schema.
       allow update: if
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'confirmCount', 'updatedAt'])
-        && request.resource.data.confirmCount is number
-        && request.resource.data.confirmCount <= resource.data.confirmCount + 1
+          .hasOnly(['status', 'confirmCount', 'flagCount', 'updatedAt'])
+        && request.resource.data.get('confirmCount', 0) is number
+        && request.resource.data.get('confirmCount', 0)
+             <= resource.data.get('confirmCount', 0) + 1
+        && request.resource.data.get('flagCount', 0) is number
+        && request.resource.data.get('flagCount', 0)
+             <= resource.data.get('flagCount', 0) + 1
         && request.resource.data.status in ['active', 'resolved', 'stale'];
 
       // No client-side deletes.
