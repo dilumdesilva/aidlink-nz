@@ -3,6 +3,11 @@
 Community-sourced map of help available and needs during natural disasters
 in Aotearoa New Zealand. **Not official. Call 111 in any emergency.**
 
+
+<img width="2032" height="1033" alt="Screenshot 2026-04-12 at 4 42 38 AM" src="https://github.com/user-attachments/assets/3c91b5f3-b965-46f5-a2fa-0adde1535e50" />
+
+
+
 **Live:** <https://aidlink.nz>
 
 Anyone can drop a pin to mark either help they can offer (shelter, fuel,
