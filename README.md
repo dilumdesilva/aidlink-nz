@@ -165,4 +165,6 @@ viral-spike mitigation strategy.
 
 ## License
 
-TBD
+[MIT](LICENSE) — free to use, fork, modify, and redistribute. If you
+deploy your own version for another community or event, a credit back
+would be appreciated but is not required.
